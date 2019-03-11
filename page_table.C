@@ -29,12 +29,15 @@ PageTable::PageTable()
    paging_enabled = 0;
    unsigned long pg_dir_frame_no= (kernel_mem_pool->get_frames(1));
    page_directory = (unsigned long *) (pg_dir_frame_no*PAGE_SIZE);
-   unsigned long pg_table_frame_no= (kernel_mem_pool->get_frames(1));
+   unsigned long pg_table_frame_no= (process_mem_pool->get_frames(1));
    unsigned long *page_table = (unsigned long *) (pg_table_frame_no*PAGE_SIZE); // the page table comes right after the page directory
    unsigned int i;
   // assert(pg_dir_frame_no);
    //assert(pg_table_frame_no);
   // fill the first entry of the page directory
+  page_directory[1023]= (unsigned long)page_directory;
+  page_directory[1023]= (unsigned long)page_directory | 0x00000003;
+  
   page_directory[0] = (unsigned long)page_table; // attribute set to: supervisor level, read/write, present(011 in binary)
   page_directory[0] = (unsigned long)page_directory[0] | 3;
   for(i=1; i<1024; i++)
@@ -43,9 +46,12 @@ PageTable::PageTable()
   }
 
    unsigned long address=0; // holds the physical address of where a page is
-
+   for(int i=1; i<ENTRIES_PER_PAGE-1; i++)
+   {
+       page_directory[i] = 0x00000000 | 0x00000002 ;
+   }
    // map the first 4MB of memory
-   for(i=0; i<1024; i++)
+   for(i=0; i<ENTRIES_PER_PAGE; i++)
    {
      page_table[i] = address | 0x00000003; // attribute set to: supervisor level, read/write, present(011 in binary)
      address = address + 4096; // 4096 = 4kb
