@@ -84,7 +84,12 @@ public:
 
   static void handle_fault(REGS * _r);
   /* The page fault handler. */
-
+    
+   void register_pool(VMPool * _vm_pool);
+   /* Register a virtual memory pool with the page table. */
+    
+   void free_page(unsigned long _page_no);
+   /* If page is valid, release frame and mark page invalid. */
 };
 
 #endif
