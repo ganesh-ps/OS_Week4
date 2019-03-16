@@ -88,16 +88,19 @@ void PageTable::handle_fault(REGS * _r)
   unsigned long err_address = read_cr2(); 
   unsigned long pg_dir_address = (err_address & 0xFFC00000)>>22;
   unsigned long pg_table_address = (err_address & 0x003FF000)>>12;
-  
+
   if((current_page_table->page_directory[pg_dir_address]&0x00000001)!=0x00000001){//pg_dir doesnt exists
-    page_table = (unsigned long *) (kernel_mem_pool->get_frames(1)*PAGE_SIZE);
-    current_page_table->page_directory[pg_dir_address] = (unsigned long)page_table; // attribute set to: supervisor level, read/write, present(011 in binary)
-    current_page_table->page_directory[pg_dir_address] = (unsigned long)current_page_table->page_directory[pg_dir_address] | 0x00000003; 
+    page_table = (unsigned long *) (process_mem_pool->get_frames(1)*PAGE_SIZE);
+	  unsigned long * last_entry_ptr = (unsigned long *) ((0x000003FF<<22)|(0X000003FF<<12)); 
+    last_entry_ptr[pg_dir_address] = (unsigned long)page_table; // attribute set to: supervisor level, read/write, present(011 in binary)
+    last_entry_ptr[pg_dir_address] = (unsigned long)last_entry_ptr[pg_dir_address] | 0x00000003; 
   }
   else{
     page_table = (unsigned long *) ((current_page_table->page_directory[pg_dir_address])&0xFFFFF000);
-    page_table[pg_table_address] = (( process_mem_pool->get_frames(1) )*PAGE_SIZE) | 0x00000003;
+	unsigned long * last_entry_ptr = (unsigned long *) ((0x000003FF<<22)|(pg_dir_address<<12)); 
+    last_entry_ptr[pg_table_address] = (( process_mem_pool->get_frames(1) )*PAGE_SIZE) | 0x00000003;
   }
+  
   Console::puts("handled page fault\n");
 
 }
