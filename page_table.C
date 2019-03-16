@@ -102,3 +102,15 @@ void PageTable::handle_fault(REGS * _r)
 
 }
 
+void PageTable::register_pool(VMPool * _vm_pool)
+{
+    assert(false);
+    Console::puts("registered VM pool\n");
+}
+
+void PageTable::free_page(unsigned long _page_no) {
+    assert(false);
+    Console::puts("freed page\n");
+}
+
+
