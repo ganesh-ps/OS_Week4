@@ -103,13 +103,35 @@ void PageTable::handle_fault(REGS * _r)
 
 void PageTable::register_pool(VMPool * _vm_pool)
 {
-    assert(false);
+    //assert(false);
+	if(PageTable::VMPoolHead==NULL){
+		PageTable::VMPoolHead = _vm_pool;
+	}
+    else {//if not first add to end of list
+        VMPool *p = PageTable::VMPoolHead;
+        while(NULL!=p->next_vmpool) {
+            p=p->next_vmpool;
+        }
+        p->next_vmpool=this;
+    }	
     Console::puts("registered VM pool\n");
 }
 
 void PageTable::free_page(unsigned long _page_no) {
-    assert(false);
+    //assert(false);
+	unsigned long pg_dir_index = (_page_no & 0xFFC00000)>>22;
+	unsigned long pg_table_index = (_page_no & 0x003FF000)>>12;
+	
+	unsigned long * rec_pg_table = (unsigned long *) ((0xFFC00000)|(pg_dir_index<<12));
+	
+	//make entry invalid 
+	rec_pg_table[pg_table_index] = rec_pg_table[pg_table_index]|0x00000002;
+	//get frame number by reading first 20 bits and release frame
+	process_mem_pool->release_frame(rec_pg_table[pg_table_index]&0xFFFFF000);
+	
+	//flush TLB
+	unsigned long val_CR3 = read_cr3();
+	write_cr3(val_CR3);
     Console::puts("freed page\n");
 }
-
 
