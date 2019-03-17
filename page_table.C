@@ -9,7 +9,7 @@ unsigned int PageTable::paging_enabled = 0;
 ContFramePool * PageTable::kernel_mem_pool = NULL;
 ContFramePool * PageTable::process_mem_pool = NULL;
 unsigned long PageTable::shared_size = 0;
-
+VMPool * PageTable::VMPoolHead=NULL;
 
 void PageTable::init_paging(ContFramePool * _kernel_mem_pool,
                             ContFramePool * _process_mem_pool,
@@ -76,23 +76,20 @@ void PageTable::handle_fault(REGS * _r)
   if((err_code & 0x00000001)!=0x00000000){
     assert(false);
   }
- 
-  VMPool *ptr = PageTable::VMPoolHead;
 
-  while(ptr!=NULL) {
-      if( ptr->is_legitimate(faulting_address) == true) {
-          flag = 1;
-          break;
-      }
-      else {
-          assert(false);
-      }
-      ptr=ptr->next_vm_pool_object;
-  }
   unsigned long * page_table;
   unsigned long err_address = read_cr2(); 
   unsigned long pg_dir_address = (err_address & 0xFFC00000)>>22;
   unsigned long pg_table_address = (err_address & 0x003FF000)>>12;
+  VMPool *ptr = PageTable::VMPoolHead;
+
+  while(ptr!=NULL) {
+      if( ptr->is_legitimate(err_address) == false) {
+          assert(false);
+
+      }
+      ptr=ptr->next_vmpool;
+  }
 
   if((current_page_table->page_directory[pg_dir_address]&0x00000001)!=0x00000001){//pg_dir doesnt exists
     page_table = (unsigned long *) (process_mem_pool->get_frames(1)*PAGE_SIZE);
@@ -124,7 +121,7 @@ void PageTable::register_pool(VMPool * _vm_pool)
         while(NULL!=p->next_vmpool) {
             p=p->next_vmpool;
         }
-        p->next_vmpool=this;
+        p->next_vmpool=_vm_pool;
     }	
     Console::puts("registered VM pool\n");
 }
@@ -139,7 +136,7 @@ void PageTable::free_page(unsigned long _page_no) {
 	//make entry invalid 
 	rec_pg_table[pg_table_index] = rec_pg_table[pg_table_index]|0x00000002;
 	//get frame number by reading first 20 bits and release frame
-	process_mem_pool->release_frame(rec_pg_table[pg_table_index]&0xFFFFF000);
+	process_mem_pool->release_frames(rec_pg_table[pg_table_index]&0xFFFFF000);
 	
 	//flush TLB
 	unsigned long val_CR3 = read_cr3();
