@@ -58,6 +58,8 @@ private:
 	unsigned int nregions_allocated;
 
 public:
+   VMPool *next_vmpool;	
+   
    VMPool(unsigned long  _base_address,
           unsigned long  _size,
           ContFramePool *_frame_pool,
