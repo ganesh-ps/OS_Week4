@@ -76,7 +76,19 @@ void PageTable::handle_fault(REGS * _r)
   if((err_code & 0x00000001)!=0x00000000){
     assert(false);
   }
-  
+ 
+  VMPool *ptr = PageTable::VMPoolHead;
+
+  while(ptr!=NULL) {
+      if( ptr->is_legitimate(faulting_address) == true) {
+          flag = 1;
+          break;
+      }
+      else {
+          assert(false);
+      }
+      ptr=ptr->next_vm_pool_object;
+  }
   unsigned long * page_table;
   unsigned long err_address = read_cr2(); 
   unsigned long pg_dir_address = (err_address & 0xFFC00000)>>22;
