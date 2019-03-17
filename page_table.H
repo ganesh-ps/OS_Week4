@@ -56,7 +56,7 @@ public:
   /* in bytes */
   static const unsigned int ENTRIES_PER_PAGE = Machine::PT_ENTRIES_PER_PAGE; 
   /* in entries, duh! */
-
+  static VMPool *VMPoolHead;
   static void init_paging(ContFramePool * _kernel_mem_pool,
                           ContFramePool * _process_mem_pool,
                           const unsigned long _shared_size);
