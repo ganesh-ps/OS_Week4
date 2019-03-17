@@ -24,18 +24,25 @@ void PageTable::init_paging(ContFramePool * _kernel_mem_pool,
 
 PageTable::PageTable()
 {
+   //assert(false);
    paging_enabled = 0;
    unsigned long pg_dir_frame_no= (kernel_mem_pool->get_frames(1));
    page_directory = (unsigned long *) (pg_dir_frame_no*PAGE_SIZE);
    unsigned long pg_table_frame_no= (process_mem_pool->get_frames(1));
    unsigned long *page_table = (unsigned long *) (pg_table_frame_no*PAGE_SIZE); // the page table comes right after the page directory
-
+   unsigned int i;
+  // assert(pg_dir_frame_no);
+   //assert(pg_table_frame_no);
   // fill the first entry of the page directory
   page_directory[1023]= (unsigned long)page_directory;
   page_directory[1023]= (unsigned long)page_directory | 0x00000003;
   
   page_directory[0] = (unsigned long)page_table; // attribute set to: supervisor level, read/write, present(011 in binary)
   page_directory[0] = (unsigned long)page_directory[0] | 3;
+  for(i=1; i<1024; i++)
+  {
+    page_directory[i] = 0x00000000 | 0x00000002; // attribute set to: supervisor level, read/write, not present(010 in binary)
+  }
 
    unsigned long address=0; // holds the physical address of where a page is
    for(int i=1; i<ENTRIES_PER_PAGE-1; i++)
@@ -43,7 +50,7 @@ PageTable::PageTable()
        page_directory[i] = 0x00000000 | 0x00000002 ;
    }
    // map the first 4MB of memory
-   for(int i=0; i<ENTRIES_PER_PAGE; i++)
+   for(i=0; i<ENTRIES_PER_PAGE; i++)
    {
      page_table[i] = address | 0x00000003; // attribute set to: supervisor level, read/write, present(011 in binary)
      address = address + 4096; // 4096 = 4kb
@@ -71,34 +78,43 @@ void PageTable::enable_paging()
 
 void PageTable::handle_fault(REGS * _r)
 {
-  //assert(false);
-  unsigned int err_code = _r->err_code;
-  if((err_code & 0x00000001)!=0x00000000){
-    assert(false);
-  }
-  
-  unsigned long * page_table;
-  unsigned long err_address = read_cr2(); 
-  unsigned long pg_dir_address = (err_address & 0xFFC00000)>>22;
-  unsigned long pg_table_address = (err_address & 0x003FF000)>>12;
+  unsigned int err_code = _r->err_code; // get the error code
 
-  if((current_page_table->page_directory[pg_dir_address]&0x00000001)!=0x00000001){//pg_dir doesnt exists
-    page_table = (unsigned long *) (process_mem_pool->get_frames(1)*PAGE_SIZE);
-    /*Console::putui((unsigned long)page_table);
-    Console::putui(pg_dir_address);
-    assert(false);*/
-    unsigned long * last_entry_ptr = (unsigned long *) (0xFFFFF000);
-    last_entry_ptr[pg_dir_address] = (unsigned long)page_table; // attribute set to: supervisor level, read/write, present(011 in binary)
-    last_entry_ptr[pg_dir_address] = (unsigned long)last_entry_ptr[pg_dir_address] | 0x00000003; 
+  //check if the error code is a page fault because of a page not present
+  if( (err_code & 0x00000001) != 0x00000000 ) {
+      Console::puts("\n Memory protection error, we don't handle that yet......exiting..... \n");
+      assert(false);
   }
-  else{
-    page_table = (unsigned long *) ((current_page_table->page_directory[pg_dir_address])&0xFFFFF000);
-    unsigned long * last_entry_ptr = (unsigned long *) ((0xFFC00000)|(pg_dir_address<<12)); 
-    last_entry_ptr[pg_table_address] = (( process_mem_pool->get_frames(1) )*PAGE_SIZE) | 0x00000003;
+
+  unsigned long faulting_address = read_cr2();
+
+
+  unsigned long page_directory_lookup_value = (faulting_address & 0xFFC00000) >> 22; // get the page table page address
+  unsigned long page_table_lookup_value =  ( (faulting_address & 0x003FF000) >>12 ) ; // get the page table entry lookup address
+
+   unsigned long        * page_table; // the page table page
+
+   unsigned long    *page_directory_pd= current_page_table->page_directory;
+  // first check if there's a fault in the page directory
+
+  if( ( page_directory_pd[page_directory_lookup_value] & 0x00000001) != 0x00000001) { //check if the page is present
+
+      unsigned long frame =  ( process_mem_pool->get_frames(1));
+      page_table = (unsigned long *) (  frame * PAGE_SIZE );
+      unsigned long *pd_recursive = (unsigned long *) ( (0x000003FF << 22) | (0x000003FF << 12) );
+      pd_recursive[page_directory_lookup_value] = (unsigned long)page_table;
+      pd_recursive[page_directory_lookup_value]= pd_recursive[page_directory_lookup_value] | 0x00000003;
+
   }
-  
+   //There's a fault in the page table page
+  else  {
+       page_table = (unsigned long *) ( page_directory_pd[page_directory_lookup_value] & 0xFFFFF000 ); //take off the last 12 bits
+       unsigned long frame =  ( process_mem_pool->get_frames(1) * PAGE_SIZE );
+       unsigned long *pt_recursive= (unsigned long *) ( (0x000003FF << 22) | (page_directory_lookup_value << 12) );
+       pt_recursive[page_table_lookup_value] = frame | 0x00000003;
+  }
+
   Console::puts("handled page fault\n");
-
 }
 
 void PageTable::register_pool(VMPool * _vm_pool)

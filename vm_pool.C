@@ -21,6 +21,7 @@
 #include "utils.H"
 #include "assert.H"
 #include "simple_keyboard.H"
+#include "page_table.H"
 
 /*--------------------------------------------------------------------------*/
 /* DATA STRUCTURES */
@@ -57,7 +58,7 @@ VMPool::VMPool(unsigned long  _base_address,
 	
 	allocated_regions[0].base_address = base_address;
 	allocated_regions[0].size=4096;
-	nregions_allocated++;
+	nregions_allocated = 1;
 	
 	page_table->register_pool(this);
 	
