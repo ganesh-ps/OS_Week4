@@ -89,7 +89,7 @@ unsigned long VMPool::allocate(unsigned long _size) {
 	nregions_allocated++;
 	
 	Console::puts("Allocated region of memory.\n");
-	Console::puts("allocated address");Console::putui((unsigned int)pages_to_be_allocated);Console::puts("\n");
+	//Console::puts("allocated address");Console::putui((unsigned int)pages_to_be_allocated);Console::puts("\n");
 	return (base_address_allocated);
 }
 
@@ -100,10 +100,10 @@ void VMPool::release(unsigned long _start_address) {
     unsigned long size_of_released=0;
     unsigned long npages_released;	
 	unsigned long start_address = _start_address;
-	Console::puts("Start address");Console::putui((unsigned int)start_address);Console::puts("\n");
+	//Console::puts("Start address");Console::putui((unsigned int)start_address);Console::puts("\n");
 	for(int i=0;i<nregions_allocated;i++)
 	{
-		Console::puts("list");Console::putui((unsigned int)allocated_regions[i].base_address);Console::puts("\n");
+		//Console::puts("list");Console::putui((unsigned int)allocated_regions[i].base_address);Console::puts("\n");
 		if(allocated_regions[i].base_address == start_address){
 			index_of_removed = i;
 			size_of_released = allocated_regions[i].size;
@@ -111,7 +111,6 @@ void VMPool::release(unsigned long _start_address) {
 			break;
 		}
 	}		
-	if(start_address>536875008){assert(false);}
 	assert(index_of_removed!=-1);
 	for(int i =index_of_removed+1;i<nregions_allocated;i++){
 		allocated_regions[i-1] = allocated_regions[i];
