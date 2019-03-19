@@ -53,13 +53,13 @@ private:
 		unsigned long size;
 	};
    
-   	
+   	allocated_regions_list* allocated_regions;
 	
 	unsigned int nregions_allocated;
 
 public:
    VMPool *next_vmpool;	
-   allocated_regions_list* allocated_regions;
+   
    VMPool(unsigned long  _base_address,
           unsigned long  _size,
           ContFramePool *_frame_pool,
