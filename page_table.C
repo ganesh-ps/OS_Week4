@@ -78,8 +78,8 @@ void PageTable::handle_fault(REGS * _r)
   }
   unsigned long * page_table;
   unsigned long err_address = read_cr2(); 
-  unsigned long pg_dir_address = (err_address & 0xFFC00000)>>22;
-  unsigned long pg_table_address = (err_address & 0x003FF000)>>12;
+  unsigned long pg_dir_index = (err_address & 0xFFC00000)>>22;
+  unsigned long pg_table_index = (err_address & 0x003FF000)>>12;
 
   VMPool *p = PageTable::VMPoolHead;
   int flag =1;  
@@ -100,19 +100,19 @@ void PageTable::handle_fault(REGS * _r)
 	}
 
 
-  if((current_page_table->page_directory[pg_dir_address]&0x00000001)!=0x00000001){//pg_dir doesnt exists
+  if((current_page_table->page_directory[pg_dir_index]&0x00000001)!=0x00000001){//pg_dir doesnt exists
     page_table = (unsigned long *) (process_mem_pool->get_frames(1)*PAGE_SIZE);
     /*Console::putui((unsigned long)page_table);
-    Console::putui(pg_dir_address);
+    Console::putui(pg_dir_index);
     assert(false);*/
-    unsigned long * last_entry_ptr = (unsigned long *) (0xFFFFF000);
-    last_entry_ptr[pg_dir_address] = (unsigned long)page_table; // attribute set to: supervisor level, read/write, present(011 in binary)
-    last_entry_ptr[pg_dir_address] = (unsigned long)last_entry_ptr[pg_dir_address] | 0x00000003; 
+    unsigned long * recursive_pg_dir = (unsigned long *) (0xFFFFF000);
+    recursive_pg_dir[pg_dir_index] = (unsigned long)page_table; // attribute set to: supervisor level, read/write, present(011 in binary)
+    recursive_pg_dir[pg_dir_index] = (unsigned long)recursive_pg_dir[pg_dir_index] | 0x00000003; 
   }
   else{
-    page_table = (unsigned long *) ((current_page_table->page_directory[pg_dir_address])&0xFFFFF000);
-    unsigned long * last_entry_ptr = (unsigned long *) ((0xFFC00000)|(pg_dir_address<<12)); 
-    last_entry_ptr[pg_table_address] = (( process_mem_pool->get_frames(1) )*PAGE_SIZE) | 0x00000003;
+    page_table = (unsigned long *) ((current_page_table->page_directory[pg_dir_index])&0xFFFFF000);
+    unsigned long * recursive_pg_table = (unsigned long *) ((0xFFC00000)|(pg_dir_index<<12)); 
+    recursive_pg_table[pg_table_index] = (( process_mem_pool->get_frames(1) )*PAGE_SIZE) | 0x00000003;
   }
   
   Console::puts("handled page fault\n");

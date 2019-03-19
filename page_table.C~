@@ -95,7 +95,7 @@ void PageTable::handle_fault(REGS * _r)
   }
 	
 	if(flag!=1){
-		Console::puts("is_legit failed in pagetable.C\n")
+		Console::puts("is_legit failed in pagetable.C\n");
 		assert(false);
 	}
 
