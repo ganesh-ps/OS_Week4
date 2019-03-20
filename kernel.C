@@ -223,7 +223,7 @@ int main() {
     /* WE TEST JUST THE PAGE TABLE */
     GeneratePageTableMemoryReferences(FAULT_ADDR, NACCESS);
 
-#else
+#else 
 
     /* WE TEST JUST THE VM POOLS */
 

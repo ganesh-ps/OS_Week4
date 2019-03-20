@@ -54,7 +54,7 @@ VMPool::VMPool(unsigned long  _base_address,
 	pool_size = _size;
 	free_size = _size-4096;
 	frame_pool = _frame_pool;
-	page_table = page_table;
+	page_table = page_table; 
 	struct allocated_regions_list *ptr = (struct allocated_regions_list *) base_address;
 	allocated_regions = ptr;
 	allocated_regions[0].base_address = base_address;

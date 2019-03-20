@@ -39,7 +39,7 @@
 
 class PageTable {
 
-private: 
+private:
 
   /* THESE MEMBERS ARE COMMON TO ENTIRE PAGING SUBSYSTEM */
   static PageTable     * current_page_table; /* pointer to currently loaded page table object */

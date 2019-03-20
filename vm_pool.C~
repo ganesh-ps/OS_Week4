@@ -60,7 +60,7 @@ VMPool::VMPool(unsigned long  _base_address,
 	allocated_regions[0].base_address = base_address;
 	allocated_regions[0].size=4096;
 	nregions_allocated = 1;
-	
+	next_vmpool = NULL;
 	page_table->register_pool(this);
 	
     Console::puts("Constructed VMPool object.\n");
